@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EquipAI — Smart Equipment Advisor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2234;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --gold: #f5c842;
+    --text: #e8f0ff;
+    --muted: #6b7fa3;
+    --success: #00e676;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(0,212,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,107,53,0.05) 0%, transparent 60%);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0f1f3d 0%, #0a1628 100%);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-dot {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .header-text p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .lang-badge {
+    margin-left: auto;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+
+  /* Chat area */
+  .chat-area {
+    height: 420px;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Messages */
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    margin-top: 2px;
+  }
+  .avatar.ai { background: linear-gradient(135deg, var(--accent), #0077ff); }
+  .avatar.user { background: linear-gradient(135deg, var(--accent2), #e91e63); }
+  .bubble {
+    max-width: 80%;
+    padding: 12px 15px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .ai .bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+  .user .bubble {
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,119,255,0.15));
+    border: 1px solid rgba(0,212,255,0.25);
+    border-top-right-radius: 4px;
+    text-align: right;
+  }
+
+  /* Option buttons */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .opt-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .opt-btn:hover, .opt-btn.selected {
+    background: rgba(0,212,255,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .opt-btn .icon { font-size: 16px; }
+
+  /* Product cards */
+  .product-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .product-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .product-card:hover { border-color: var(--accent); transform: translateX(2px); }
+  .product-card.best { border-color: rgba(245,200,66,0.4); }
+  .badge {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 9px; font-weight: 600; padding: 3px 7px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge.gold { background: rgba(245,200,66,0.15); color: var(--gold); border: 1px solid rgba(245,200,66,0.3); }
+  .badge.blue { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+  .badge.orange { background: rgba(255,107,53,0.1); color: var(--accent2); border: 1px solid rgba(255,107,53,0.25); }
+  .product-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .product-price { color: var(--gold); font-weight: 500; font-size: 15px; margin-bottom: 8px; }
+  .product-specs { display: flex; flex-wrap: wrap; gap: 5px; }
+  .spec-tag {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    font-size: 10px; padding: 2px 7px;
+    border-radius: 20px; color: var(--muted);
+  }
+
+  /* Comparison table */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  .compare-table th {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 11px;
+  }
+  .compare-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td:first-child { color: var(--muted); font-size: 11px; }
+  .win { color: var(--success); font-weight: 500; }
+
+  /* Upsell items */
+  .upsell-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 4px; }
+  .upsell-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upsell-item:hover { border-color: var(--accent2); }
+  .upsell-item .ui-icon { font-size: 18px; }
+  .upsell-item .ui-name { font-weight: 500; font-size: 12px; }
+  .upsell-item .ui-price { color: var(--muted); font-size: 10px; }
+
+  /* Quote card */
+  .quote-card {
+    background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,119,255,0.04));
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 4px;
+  }
+  .quote-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .quote-row:last-child { border-bottom: none; }
+  .quote-row.total { font-weight: 600; color: var(--gold); font-size: 14px; margin-top: 4px; }
+  .quote-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .q-btn {
+    flex: 1; padding: 9px; border-radius: 10px; font-size: 12px;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    border: none; font-weight: 500; transition: all 0.2s;
+  }
+  .q-btn.primary { background: var(--accent); color: #000; }
+  .q-btn.secondary { background: rgba(37,211,102,0.15); color: #25d366; border: 1px solid rgba(37,211,102,0.3); }
+  .q-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* Typing indicator */
+  .typing { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .text-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 40px;
+    max-height: 80px;
+    line-height: 1.4;
+  }
+  .text-input:focus { border-color: rgba(0,212,255,0.4); }
+  .text-input::placeholder { color: var(--muted); }
+  .send-btn {
+    width: 40px; height: 40px;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover { background: #00b8d9; transform: scale(1.05); }
+
+  /* Status bar */
+  .status-bar {
+    padding: 8px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .status-text { font-size: 10px; color: var(--muted); }
+  .step-counter { font-size: 10px; color: var(--muted); font-family: 'Syne', sans-serif; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-dot">⚡</div>
+    <div class="header-text">
+      <h1>EquipAI Advisor</h1>
+      <p>AI-powered equipment recommendation</p>
+    </div>
+    <div class="lang-badge">EN · TA · HI</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress" style="width:10%"></div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area" id="chat"></div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <textarea class="text-input" id="userInput" placeholder="Type your requirement or tap options above..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+    <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-text"><span class="status-dot"></span>AI Agent Online · 847 products indexed</span>
+    <span class="step-counter" id="stepCounter">Step 1 of 10</span>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const progress = document.getElementById('progress');
+const stepCounter = document.getElementById('stepCounter');
+const userInput = document.getElementById('userInput');
+
+let state = {
+  step: 0,
+  category: '',
+  answers: {},
+  cart: [],
+  selectedProduct: null
+};
+
+const PRODUCTS = {
+  motors: [
+    { name: 'Crompton 2HP Motor', price: 12500, specs: ['2HP','Single Phase','IP55','2 yr warranty'], type: 'budget' },
+    { name: 'Kirloskar 3HP Motor', price: 18900, specs: ['3HP','3 Phase','IE3 Efficient','3 yr warranty'], type: 'best' },
+    { name: 'ABB Premium 3HP', price: 26000, specs: ['3HP','3 Phase','IE4 Ultra','5 yr warranty'], type: 'premium' },
+  ],
+  pumps: [
+    { name: 'Grundfos CM-5', price: 9800, specs: ['0.5HP','50LPM','3-floor lift','2 yr warranty'], type: 'budget' },
+    { name: 'Kirloskar Star-2', price: 14500, specs: ['1HP','80LPM','5-floor lift','3 yr warranty'], type: 'best' },
+    { name: 'Wilo Stratos', price: 22000, specs: ['1.5HP','120LPM','8-floor lift','5 yr warranty'], type: 'premium' },
+  ],
+  drilling: [
+    { name: 'Bosch GSB 550', price: 3200, specs: ['550W','13mm Chuck','Impact','2 yr warranty'], type: 'budget' },
+    { name: 'Makita HP2071F', price: 7800, specs: ['1010W','16mm Chuck','Variable Speed','3 yr warranty'], type: 'best' },
+    { name: 'Hilti TE 7-C', price: 28000, specs: ['800W','SDS-Plus','Anti-Vib','5 yr warranty'], type: 'premium' },
+  ],
+  solar: [
+    { name: 'Loom Solar 3KW Kit', price: 115000, specs: ['3KW','12 Panels','MPPT','10 yr warranty'], type: 'budget' },
+    { name: 'Havells 5KW System', price: 195000, specs: ['5KW','16 Panels','Hybrid','25 yr panel'], type: 'best' },
+    { name: 'SunEdison 10KW', price: 380000, specs: ['10KW','32 Panels','Smart Monitoring','25 yr'], type: 'premium' },
+  ]
+};
+
+const UPSELL = {
+  motors: [
+    { icon: '🔌', name: 'Starter Panel', price: '₹2,200' },
+    { icon: '📡', name: 'IoT Monitor', price: '₹1,800' },
+    { icon: '🔧', name: 'AMC Package', price: '₹999/yr' },
+    { icon: '🔴', name: 'Control Cable', price: '₹450' },
+  ],
+  pumps: [
+    { icon: '🔌', name: 'Pressure Switch', price: '₹850' },
+    { icon: '📡', name: 'Flow Sensor', price: '₹1,200' },
+    { icon: '🔧', name: 'AMC Package', price: '₹799/yr' },
+    { icon: '🔴', name: 'PVC Pipes Kit', price: '₹650' },
+  ],
+  drilling: [
+    { icon: '🔩', name: 'Drill Bit Set', price: '₹450' },
+    { icon: '🧰', name: 'Carry Case', price: '₹350' },
+    { icon: '🔌', name: 'Extension Cord', price: '₹299' },
+    { icon: '🛡️', name: 'Safety Gloves', price: '₹199' },
+  ],
+  solar: [
+    { icon: '🔋', name: 'Battery Bank', price: '₹45,000' },
+    { icon: '📡', name: 'Smart Meter', price: '₹3,500' },
+    { icon: '🔧', name: 'AMC Package', price: '₹4,999/yr' },
+    { icon: '🔌', name: 'EV Charger Port', price: '₹12,000' },
+  ]
+};
+
+const CATEGORIES = [
+  { icon: '⚙️', label: 'Motors', key: 'motors' },
+  { icon: '💧', label: 'Pumps', key: 'pumps' },
+  { icon: '🔩', label: 'Drilling Machines', key: 'drilling' },
+  { icon: '☀️', label: 'Solar Products', key: 'solar' },
+  { icon: '🤖', label: 'IoT Devices', key: 'iot' },
+  { icon: '⚡', label: 'Electrical Tools', key: 'electrical' },
+];
+
+const QUESTIONS = {
+  motors: [
+    { q: 'What power do you need?', opts: ['1 HP','2 HP','3 HP','5 HP+'], key: 'power' },
+    { q: 'Power supply at your location?', opts: ['Single Phase (230V)','Three Phase (415V)'], key: 'phase' },
+    { q: 'Installation environment?', opts: ['Indoor','Outdoor','Harsh/Dusty'], key: 'env' },
+    { q: 'Your budget range?', opts: ['Under ₹10K','₹10K–₹20K','₹20K–₹40K','No limit'], key: 'budget' },
+  ],
+  pumps: [
+    { q: 'What will the pump be used for?', opts: ['Domestic water supply','Irrigation','Borewell','Industrial'], key: 'use' },
+    { q: 'How many floors to lift water?', opts: ['Ground floor','1–2 floors','3–5 floors','6+ floors'], key: 'floors' },
+    { q: 'Power supply available?', opts: ['Single Phase','Three Phase'], key: 'phase' },
+    { q: 'Your budget range?', opts: ['Under ₹8K','₹8K–₹15K','₹15K–₹25K','No limit'], key: 'budget' },
+  ],
+  drilling: [
+    { q: 'What material will you drill?', opts: ['Wood','Concrete/Masonry','Metal','All types'], key: 'material' },
+    { q: 'Usage frequency?', opts: ['Occasional (home)','Daily (site)','Heavy industrial'], key: 'usage' },
+    { q: 'Power source?', opts: ['Corded','Cordless (battery)'], key: 'power' },
+    { q: 'Budget?', opts: ['Under ₹3K','₹3K–₹10K','₹10K+'], key: 'budget' },
+  ],
+  solar: [
+    { q: 'Type of installation?', opts: ['Residential rooftop','Commercial','Industrial','Farm'], key: 'type' },
+    { q: 'Monthly electricity bill?', opts: ['Under ₹1K','₹1K–₹3K','₹3K–₹8K','₹8K+'], key: 'bill' },
+    { q: 'Grid connectivity?', opts: ['Grid-tied','Off-grid (with battery)','Hybrid'], key: 'grid' },
+    { q: 'Budget?', opts: ['₹80K–₹1.5L','₹1.5L–₹3L','₹3L+'], key: 'budget' },
+  ]
+};
+
+function addMsg(role, content) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatarEmoji = role === 'ai' ? '⚡' : '👤';
+  div.innerHTML = `
+    <div class="avatar ${role}">${avatarEmoji}</div>
+    <div class="bubble">${content}</div>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addOptions(opts, callback) {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  const grid = document.createElement('div');
+  grid.className = 'options-grid';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="icon">${opt.icon}</span>${opt.label}`;
+    btn.onclick = () => {
+      div.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      setTimeout(() => { div.remove(); callback(opt); }, 200);
+    };
+    grid.appendChild(btn);
+  });
+  const wrapper = document.createElement('div');
+  wrapper.className = 'avatar ai';
+  wrapper.textContent = '⚡';
+  div.appendChild(wrapper);
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'bubble';
+  bubbleDiv.style.maxWidth = '90%';
+  bubbleDiv.appendChild(grid);
+  div.appendChild(bubbleDiv);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typing';
+  div.innerHTML = `<div class="avatar ai">⚡</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function delay(fn, ms) { setTimeout(fn, ms); }
+
+function setProgress(pct, step) {
+  progress.style.width = pct + '%';
+  stepCounter.textContent = `Step ${step} of 10`;
+}
+
+function showProducts(category) {
+  const products = PRODUCTS[category] || PRODUCTS.motors;
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="avatar ai">⚡</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.style.maxWidth = '95%';
+  const cards = document.createElement('div');
+  cards.className = 'product-cards';
+
+  products.forEach(p => {
+    const card = document.createElement('div');
+    card.className = `product-card ${p.type === 'best' ? 'best' : ''}`;
+    const badgeMap = { best: ['gold','🥇 Best Match'], budget: ['blue','🥈 Budget Pick'], premium: ['orange','🥉 Premium'] };
+    const [bc, bl] = badgeMap[p.type];
+    card.innerHTML = `
+      <div class="badge ${bc}">${bl}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-price">₹${p.price.toLocaleString('en-IN')}</div>
+      <div class="product-specs">${p.specs.map(s=>`<span class="spec-tag">${s}</span>`).join('')}</div>
+    `;
+    card.onclick = () => {
+      state.selectedProduct = p;
+      addMsg('user', `I'll go with ${p.name}`);
+      delay(() => showUpsell(category, p), 800);
+    };
+    cards.appendChild(card);
+  });
+  bubble.appendChild(cards);
+  div.appendChild(bubble);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showComparison(category) {
+  const products = PRODUCTS[category] || PRODUCTS.motors;
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="avatar ai">⚡</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.style.maxWidth = '95%';
+  bubble.style.padding = '10px';
+  bubble.innerHTML = `
+    <table class="compare-table">
+      <thead><tr><th>Feature</th><th>${products[0].name.split(' ').slice(-2).join(' ')}</th><th>${products[1].name.split(' ').slice(-2).join(' ')}</th></tr></thead>
+      <tbody>
+        <tr><td>Power</td><td>${products[0].specs[0]}</td><td class="win">${products[1].specs[0]}</td></tr>
+        <tr><td>Phase</td><td>${products[0].specs[1]}</td><td>${products[1].specs[1]}</td></tr>
+        <tr><td>Warranty</td><td>${products[0].specs[3]}</td><td class="win">${products[1].specs[3]}</td></tr>
+        <tr><td>Price</td><td class="win">₹${products[0].price.toLocaleString('en-IN')}</td><td>₹${products[1].price.toLocaleString('en-IN')}</td></tr>
+      </tbody>
+    </table>
+  `;
+  div.appendChild(bubble);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showUpsell(category, product) {
+  removeTyping();
+  showTyping();
+  delay(() => {
+    removeTyping();
+    addMsg('ai', `Great choice! 🎉 Customers who buy <b>${product.name}</b> also need these accessories:`);
+    const items = UPSELL[category] || UPSELL.motors;
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    div.innerHTML = `<div class="avatar ai">⚡</div>`;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.style.maxWidth = '95%';
+    const grid = document.createElement('div');
+    grid.className = 'upsell-grid';
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'upsell-item';
+      el.innerHTML = `<span class="ui-icon">${item.icon}</span><div><div class="ui-name">${item.name}</div><div class="ui-price">${item.price}</div></div>`;
+      el.onclick = () => {
+        el.style.borderColor = 'var(--accent)';
+        state.cart.push(item.name);
+      };
+      grid.appendChild(el);
+    });
+    bubble.appendChild(grid);
+    div.appendChild(bubble);
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    setProgress(80, 8);
+    delay(() => {
+      addMsg('ai', `Tap items to add to your order. Ready to generate your quote? 📄`);
+      addOptions([
+        { icon: '📄', label: 'Generate Quote', key: 'quote' },
+        { icon: '🔄', label: 'Compare Models', key: 'compare' },
+        { icon: '💬', label: 'WhatsApp Share', key: 'whatsapp' },
+        { icon: '🔁', label: 'Start Over', key: 'restart' },
+      ], (opt) => {
+        if (opt.key === 'quote') showQuote(product);
+        else if (opt.key === 'compare') { addMsg('user', 'Show me comparison'); delay(() => { addMsg('ai', 'Here is a side-by-side comparison:'); showComparison(category); }, 600); }
+        else if (opt.key === 'whatsapp') addMsg('ai', '✅ Quote link sent to your WhatsApp! Our team will follow up within 2 hours.');
+        else if (opt.key === 'restart') { chat.innerHTML = ''; state = { step: 0, category: '', answers: {}, cart: [], selectedProduct: null }; init(); }
+      });
+    }, 1000);
+  }, 900);
+}
+
+function showQuote(product) {
+  removeTyping();
+  addMsg('user', 'Generate my quote');
+  showTyping();
+  delay(() => {
+    removeTyping();
+    const gst = Math.round(product.price * 0.18);
+    const total = product.price + gst;
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    div.innerHTML = `<div class="avatar ai">⚡</div>`;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.style.maxWidth = '95%';
+    bubble.innerHTML = `
+      <div class="quote-card">
+        <div class="quote-row"><span>Product</span><span>${product.name}</span></div>
+        <div class="quote-row"><span>Base Price</span><span>₹${product.price.toLocaleString('en-IN')}</span></div>
+        <div class="quote-row"><span>GST (18%)</span><span>₹${gst.toLocaleString('en-IN')}</span></div>
+        ${state.cart.length ? `<div class="quote-row"><span>Accessories (${state.cart.length})</span><span>Added</span></div>` : ''}
+        <div class="quote-row"><span>Delivery</span><span style="color:var(--success)">FREE · 2–4 days</span></div>
+        <div class="quote-row total"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
+        <div class="quote-actions">
+          <button class="q-btn primary" onclick="alert('📥 PDF quote downloaded!')">📥 Download PDF</button>
+          <button class="q-btn secondary" onclick="alert('✅ Sent to WhatsApp!')">📲 WhatsApp</button>
+        </div>
+      </div>
+    `;
+    div.appendChild(bubble);
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    setProgress(100, 10);
+    delay(() => addMsg('ai', '✅ Quote saved to your profile. Our engineer will call within 4 hours to confirm. Thank you! 🙏'), 800);
+  }, 1000);
+}
+
+function runQuestions(category, qList, idx) {
+  if (idx >= qList.length) {
+    setProgress(60, 6);
+    removeTyping();
+    addMsg('ai', `Perfect! Based on your requirements, here are my top recommendations for <b>${category}</b>:`);
+    delay(() => {
+      showProducts(category);
+      setProgress(70, 7);
+    }, 400);
+    return;
+  }
+  const q = qList[idx];
+  addMsg('ai', q.q);
+  addOptions(q.opts.map(o => ({ icon: '•', label: o, key: o })), (opt) => {
+    state.answers[q.key] = opt.label;
+    addMsg('user', opt.label);
+    setProgress(20 + idx * 10, 3 + idx);
+    showTyping();
+    delay(() => {
+      removeTyping();
+      runQuestions(category, qList, idx + 1);
+    }, 700);
+  });
+}
+
+function sendMsg() {
+  const val = userInput.value.trim();
+  if (!val) return;
+  addMsg('user', val);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  showTyping();
+  delay(() => {
+    removeTyping();
+    const lower = val.toLowerCase();
+    if (lower.includes('motor') || lower.includes('மோட்டார்')) {
+      state.category = 'motors';
+      addMsg('ai', `Got it! Let me ask you a few quick questions to find the perfect motor.`);
+      delay(() => runQuestions('motors', QUESTIONS.motors, 0), 500);
+    } else if (lower.includes('pump') || lower.includes('பம்ப்')) {
+      state.category = 'pumps';
+      addMsg('ai', `A pump for 3-floor building — I can help! Let me find the right one.`);
+      delay(() => runQuestions('pumps', QUESTIONS.pumps, 0), 500);
+    } else if (lower.includes('solar') || lower.includes('சோலார்')) {
+      state.category = 'solar';
+      addMsg('ai', `Solar is a great investment! Let me understand your needs.`);
+      delay(() => runQuestions('solar', QUESTIONS.solar, 0), 500);
+    } else if (lower.includes('drill')) {
+      state.category = 'drilling';
+      delay(() => runQuestions('drilling', QUESTIONS.drilling, 0), 500);
+    } else {
+      addMsg('ai', `I understand you're looking for "${val}". Let me help — which category fits best?`);
+      delay(() => {
+        addOptions(CATEGORIES.map(c => ({ icon: c.icon, label: c.label, key: c.key })), (opt) => {
+          state.category = opt.key;
+          addMsg('user', opt.label);
+          showTyping();
+          delay(() => {
+            removeTyping();
+            const qs = QUESTIONS[opt.key];
+            if (qs) runQuestions(opt.key, qs, 0);
+            else addMsg('ai', `Great choice! Let me search our ${opt.label} catalog for you. This category is being updated — please ask our team for assistance or try Motors, Pumps, Drilling, or Solar.`);
+          }, 700);
+        });
+      }, 400);
+    }
+  }, 900);
+}
+
+function init() {
+  setProgress(10, 1);
+  delay(() => {
+    addMsg('ai', `👋 Hi! I'm your AI Equipment Advisor. I'll help you find the perfect equipment in seconds — just like talking to an expert engineer.`);
+    delay(() => {
+      addMsg('ai', `What are you looking for today?`);
+      addOptions(CATEGORIES.map(c => ({ icon: c.icon, label: c.label, key: c.key })), (opt) => {
+        state.category = opt.key;
+        addMsg('user', opt.label);
+        setProgress(20, 2);
+        showTyping();
+        delay(() => {
+          removeTyping();
+          addMsg('ai', `Good choice! I'll ask you ${(QUESTIONS[opt.key]||[]).length || 4} quick questions to match you with the best ${opt.label.toLowerCase()}.`);
+          const qs = QUESTIONS[opt.key];
+          if (qs) delay(() => runQuestions(opt.key, qs, 0), 600);
+          else delay(() => addMsg('ai', `This category is coming soon! Try Motors, Pumps, Drilling, or Solar for now.`), 600);
+        }, 700);
+      });
+    }, 800);
+  }, 400);
+}
+
+init();
+</script>
+</body>
+</html>
